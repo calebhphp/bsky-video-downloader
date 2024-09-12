@@ -60,3 +60,8 @@ Para rodar esta aplicação localmente:
 4. **Baixe o Vídeo Convertido:**
 
    Após a conclusão da conversão, um link para download do vídeo convertido será exibido. Clique no link para baixar o vídeo em formato MP4.
+
+![screencapture-localhost-conversor-2024-09-12-00_40_38](https://github.com/user-attachments/assets/a306dd05-7470-4809-802f-dc6f6ad90365)
+![screencapture-localhost-conversor-2024-09-12-00_41_12](https://github.com/user-attachments/assets/e9ca3ecd-3da4-471c-8f5b-551e40920674)
+![screencapture-localhost-conversor-result-php-2024-09-12-00_41_00](https://github.com/user-attachments/assets/0b6186eb-a777-4c99-a090-43b88454bb88)
+
