@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Video Downloader for Bluesky</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="https://docs.bsky.app/img/favicon.png" type="image/png">
+</head>
+<body>
+  <header>
+    <h1>Video Downloader for Bluesky</h1>
+    <p id="feitoPor">© 2024 Feito por Caique Silva</p>
+    <div class="links">
+      <a href="https://www.linkedin.com/in/sergio-caique-da-silva/">
+        <img src="https://skillicons.dev/icons?i=linkedin" style="width:22px;" alt="Linkedin">
+      </a>
+      <a href="https://github.com/scaique">
+        <img src="https://skillicons.dev/icons?i=github" style="width:22px;" alt="Github">
+      </a>
+      <a href="https://indiebluegames.blogspot.com/">
+        <img src="https://cdn-icons-png.flaticon.com/512/4494/4494538.png" style="width:22px;" alt="Blog">
+      </a>
+      <a href="https://scaique.github.io/">
+        <img src="https://cdn-icons-png.flaticon.com/512/8633/8633238.png" style="width:22px;" alt="Portfolio">
+      </a>
+    </div>
+  </header>
+  <div class="container">
+    <div>
+      <input type="text" id="link-video" placeholder="Insira seu nome de usuário." required>
+    </div>
+    <div>
+      <button style="width: 100%;" id="download-btn" class="download-btn" onclick="getLink()">Buscar seu usuário</button>
+    </div>
+  </div>
+  <div id="div-link"></div>
+
+  <div id="mensagem" style="display: none;">
+    <div id="carregando">
+      <span id="avisoCarregando">Carregando...</span> <br>
+      <span id="msgCarregando" style="font-size: 65%; color: rgb(152, 152, 152);">Isso pode levar um tempo</span>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
