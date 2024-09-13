@@ -10,7 +10,7 @@
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg text-center">
         <?php
         // Recebe o resultado da conversão
-        $output_file = 'output.mp4';
+        $output_file = isset($_GET['file']) ? $_GET['file'] : '';
 
         if (isset($_GET['status']) && $_GET['status'] === 'success') {
             echo "<h1 class='text-2xl font-semibold text-gray-800 mb-4'>Conversão bem-sucedida!</h1>";
@@ -19,7 +19,7 @@
         } else {
             echo "<h1 class='text-2xl font-semibold text-gray-800 mb-4'>Erro na Conversão</h1>";
             echo "<p class='text-red-600 mb-4'>Ocorreu um erro durante o processo de conversão. Tente novamente.</p>";
-            echo "<a href='index.html' class='inline-block bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700'>Voltar</a>";
+            echo "<a href='index.php' class='inline-block bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700'>Voltar</a>"; 
         }
         ?>
     </div>
