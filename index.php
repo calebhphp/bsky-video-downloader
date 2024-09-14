@@ -18,11 +18,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.5em;
-            font-weight: bold;
             z-index: 9999;
-            display: none;
+            display: none; /* Oculta por padrão */
+        }
+
+        /* Card de carregamento */
+        .loading-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 300px;
+            width: 100%;
         }
 
         /* Evitar zoom no input em dispositivos móveis */
@@ -54,7 +62,12 @@
 <body class="bg-gray-100 flex flex-col justify-center min-h-screen">
     <div class="flex-grow flex items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
-            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Video Downloader for BlueSky</h1>
+        <h1 class="text-2xl font-semibold text-gray-800 mb-4">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-4">
+            Video Downloader for BlueSky
+            <span class="text-sm text-gray-500 ml-2 italic">Beta</span>
+        </h1>
+
             <form id="conversion-form" action="convert.php" method="post">
                 <input type="text" name="video_url" id="video_url" placeholder="Insira a URL do post do BlueSky" required class="w-full p-3 border border-gray-300 rounded-md mb-4">
                 <input type="submit" value="Buscar vídeo" class="bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700">
@@ -95,109 +108,130 @@
     </footer>
 
     <!-- Overlay de carregamento -->
-    <div id="loading-overlay" class="overlay">Processando, por favor aguarde...</div>
+    <div id="loading-overlay" class="overlay">
+        <div class="loading-card">
+            <div class="flex justify-center mb-4">
+                <img src="https://cdn-icons-png.flaticon.com/512/263/263114.png" alt="Loading" class="w-16 h-16 animate-spin">
+            </div>
+            <p class="text-gray-700 text-lg">Processando...<br>Isso pode levar um tempo, por favor aguarde...</p>
+        </div>
+    </div>
+    
+    <div id="div-link" class="text-center mt-4"></div>
+
     <script>
-let cursor = null;
+        let cursor = null;
 
-function carregando(valor) {
-    const msg = document.getElementById("loading-overlay");
-    msg.style.display = valor ? "flex" : "none";
-}
+        function carregando(valor) {
+            const msg = document.getElementById("loading-overlay");
+            msg.style.display = valor ? "flex" : "none";
+        }
 
-async function getDID(actor) {
-    const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${actor}`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Erro ao buscar o perfil');
-        const data = await response.json();
-        console.log(`actor: ${actor} - did: ${data.did}`);
-        return { actor, did: data.did };
-    } catch (error) {
-        console.error('Erro:', error);
-        return null;
-    }
-}
-
-async function getPost(actor, did, postId) {
-    try {
-        let proxima = true;
-        let playlist = null;
-
-        while (proxima) {
-            let url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${actor}&filter=posts_with_media`;
-            if (cursor) url += `&cursor=${cursor}`;
-
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Erro ao buscar o feed do autor');
-            const data = await response.json();
-            const expectedUri = `at://${did}/app.bsky.feed.post/${postId}`;
-
-            for (const post of data.feed) {
-                if (post.post?.uri === expectedUri) {
-                    playlist = decodeURIComponent(post.post?.embed?.playlist);
-                    console.log(`playlist: ${playlist}`);
-                    proxima = false; // Encontrou a playlist, encerra o loop
-                    break;
-                }
+        async function getDID(actor) {
+            const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${actor}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Erro ao buscar o perfil');
+                const data = await response.json();
+                console.log(`actor: ${actor} - did: ${data.did}`);
+                return { actor, did: data.did };
+            } catch (error) {
+                console.error('Erro:', error);
+                return null;
             }
-
-            cursor = data.cursor;
-            proxima = cursor != null && !playlist; // Continua se houver cursor e playlist não encontrada
         }
 
-        return playlist;
-    } catch (error) {
-        console.error('Erro:', error);
-        return null;
-    }
-}
+        async function getPost(actor, did, postId) {
+            try {
+                let proxima = true;
+                let playlist = null;
 
-async function getLink() {
-    const input = document.getElementById("video_url").value;
-    const regex = /https:\/\/bsky\.app\/profile\/(.+?)\/post\/(.+)/;
-    const match = input.match(regex);
+                while (proxima) {
+                    let url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${actor}&filter=posts_with_media`;
+                    if (cursor) url += `&cursor=${cursor}`;
 
-    if (match) {
-        const actor = match[1];
-        const postId = match[2];
-        carregando(true);
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Erro ao buscar o feed do autor');
+                    const data = await response.json();
+                    const expectedUri = `at://${did}/app.bsky.feed.post/${postId}`;
 
-        const profileData = await getDID(actor);
-        if (!profileData) {
-            console.log("Não foi possível obter o DID.");
-            carregando(false);
-            return;
+                    for (const post of data.feed) {
+                        if (post.post?.uri === expectedUri) {
+                            playlist = decodeURIComponent(post.post?.embed?.playlist);
+                            console.log(`playlist: ${playlist}`);
+                            proxima = false; // Encontrou a playlist, encerra o loop
+                            break;
+                        }
+                    }
+
+                    cursor = data.cursor;
+                    proxima = cursor != null && !playlist; // Continua se houver cursor e playlist não encontrada
+                }
+
+                return playlist;
+            } catch (error) {
+                console.error('Erro:', error);
+                return null;
+            }
         }
 
-        const playlist = await getPost(profileData.actor, profileData.did, postId);
-        if (playlist && playlist.startsWith('http')) {
-            // Enviar o formulário para o PHP
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = 'convert.php';
-            const inputField = document.createElement('input');
-            inputField.type = 'hidden';
-            inputField.name = 'video_url';
-            inputField.value = playlist;
-            form.appendChild(inputField);
-            document.body.appendChild(form);
-            form.submit();  // Envia o formulário automaticamente
-        } else {
-            document.getElementById("div-link").innerText = "Nenhuma playlist encontrada.";
-        }
-        carregando(false);
-    } else {
-        console.log("Formato de link inválido.");
-    }
-}
+        document.getElementById('conversion-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evita a submissão padrão do formulário
+            carregando(true); // Mostra o overlay de carregamento
 
-// Adiciona um event listener ao formulário para usar a função getLink na submissão
-document.getElementById('conversion-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Evita a submissão padrão do formulário
-    getLink();
-});
+            const input = document.getElementById("video_url");
+            const inputValue = input.value;
+            const regex = /https:\/\/bsky\.app\/profile\/(.+?)\/post\/(.+)/;
+            const match = inputValue.match(regex);
 
+            if (match) {
+                const actor = match[1];
+                const postId = match[2];
+
+                const profileData = await getDID(actor);
+                if (!profileData) {
+                    console.log("Não foi possível obter o DID.");
+                    carregando(false);
+                    return;
+                }
+
+                const playlist = await getPost(profileData.actor, profileData.did, postId);
+                if (playlist && playlist.startsWith('http')) {
+                    try {
+                        const response = await fetch('convert.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: new URLSearchParams({ video_url: playlist })
+                        });
+                        const result = await response.json();
+
+                        if (result.status === 'success') {
+                            const link = document.createElement('a');
+                            link.href = result.file;
+                            link.download = result.file.split('/').pop(); // Nome do arquivo para download
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        } else {
+                            console.log(result.message);
+                            document.getElementById("div-link").innerText = "Erro na conversão: " + result.message;
+                        }
+                    } catch (error) {
+                        console.error('Erro na conversão:', error);
+                        document.getElementById("div-link").innerText = "Erro na conversão.";
+                    }
+                } else {
+                    document.getElementById("div-link").innerText = "Nenhuma playlist encontrada.";
+                }
+
+                // Limpar o campo de entrada após a submissão
+                input.value = '';
+
+                carregando(false);
+            } else {
+                console.log("Formato de link inválido.");
+            }
+        });
     </script>
-
 </body>
 </html>

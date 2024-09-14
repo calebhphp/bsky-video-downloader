@@ -15,7 +15,8 @@
         if (isset($_GET['status']) && $_GET['status'] === 'success') {
             echo "<h1 class='text-2xl font-semibold text-gray-800 mb-4'>Conversão bem-sucedida!</h1>";
             echo "<p class='text-gray-600 mb-4'>O vídeo foi convertido com sucesso. Clique no botão abaixo para iniciar o download.</p>";
-            echo "<a href='download.php?file=" . urlencode($output_file) . "' class='inline-block bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700'>Download do arquivo MP4</a>";
+            echo "<a href='download.php?file=" . urlencode($output_file) . "&expires=" . urlencode(date('U', strtotime('+1 hour'))) . "' class='inline-block bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700'>Download do arquivo MP4</a>";
+            echo "<p id='success-message' class='mt-4 text-green-600'>Download disponível.</p>"; // Mensagem de sucesso
         } else {
             echo "<h1 class='text-2xl font-semibold text-gray-800 mb-4'>Erro na Conversão</h1>";
             echo "<p class='text-red-600 mb-4'>Ocorreu um erro durante o processo de conversão. Tente novamente.</p>";
