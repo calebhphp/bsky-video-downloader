@@ -70,7 +70,7 @@
 
             <form id="conversion-form" action="convert.php" method="post">
                 <input type="text" name="video_url" id="video_url" placeholder="Insira a URL do post do BlueSky" required class="w-full p-3 border border-gray-300 rounded-md mb-4">
-                <input type="submit" value="Buscar vídeo" class="bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700">
+                <input type="submit" value="Buscar mídia" class="bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700">
             </form>
 
             <!-- Redes Sociais -->
@@ -133,7 +133,6 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Erro ao buscar o perfil');
                 const data = await response.json();
-                console.log(`actor: ${actor} - did: ${data.did}`);
                 return { actor, did: data.did };
             } catch (error) {
                 console.error('Erro:', error);
@@ -144,10 +143,10 @@
         async function getPost(actor, did, postId) {
             try {
                 let proxima = true;
-                let playlist = null;
+                let midia = null;
 
                 while (proxima) {
-                    let url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${actor}&filter=posts_with_media`;
+                    let url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${actor}`;
                     if (cursor) url += `&cursor=${cursor}`;
 
                     const response = await fetch(url);
@@ -157,18 +156,19 @@
 
                     for (const post of data.feed) {
                         if (post.post?.uri === expectedUri) {
-                            playlist = decodeURIComponent(post.post?.embed?.playlist);
-                            console.log(`playlist: ${playlist}`);
-                            proxima = false; // Encontrou a playlist, encerra o loop
+                            if (post.post?.embed) {
+                                midia = decodeURIComponent(post.post?.embed?.playlist || post.post?.embed?.external?.uri);
+                            }
+                            proxima = false; // Encontrou a midia, encerra o loop
                             break;
                         }
                     }
 
                     cursor = data.cursor;
-                    proxima = cursor != null && !playlist; // Continua se houver cursor e playlist não encontrada
+                    proxima = cursor != null && !midia; // Continua se houver cursor e midia não encontrada
                 }
 
-                return playlist;
+                return midia;
             } catch (error) {
                 console.error('Erro:', error);
                 return null;
@@ -195,33 +195,51 @@
                     return;
                 }
 
-                const playlist = await getPost(profileData.actor, profileData.did, postId);
-                if (playlist && playlist.startsWith('http')) {
-                    try {
-                        const response = await fetch('convert.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: new URLSearchParams({ video_url: playlist })
-                        });
-                        const result = await response.json();
+                const midia = await getPost(profileData.actor, profileData.did, postId);
+                if (midia && midia.startsWith('http')) {
+                    if (midia.endsWith('.m3u8')) {
+                        try {
+                            const response = await fetch('convert.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: new URLSearchParams({ video_url: midia })
+                            });
+                            const result = await response.json();
 
-                        if (result.status === 'success') {
-                            const link = document.createElement('a');
-                            link.href = result.file;
-                            link.download = result.file.split('/').pop(); // Nome do arquivo para download
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        } else {
-                            console.log(result.message);
-                            document.getElementById("div-link").innerText = "Erro na conversão: " + result.message;
+                            if (result.status === 'success') {
+                                const link = document.createElement('a');
+                                link.href = result.file;
+                                link.download = result.file.split('/').pop(); // Nome do arquivo para download
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                location.reload();
+                            } else {
+                                console.log(result.message);
+                                document.getElementById("div-link").innerText = "Erro na conversão: " + result.message;
+                            }
+                        } catch (error) {
+                            console.error('Erro na conversão:', error);
+                            document.getElementById("div-link").innerText = "Erro na conversão.";
                         }
-                    } catch (error) {
-                        console.error('Erro na conversão:', error);
-                        document.getElementById("div-link").innerText = "Erro na conversão.";
+                    } else {
+                        fetch(midia)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = 'gif-bsky.gif';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(url);
+                                location.reload();
+                            })
+                            .catch(error => console.error('Erro ao baixar o GIF:', error));
                     }
                 } else {
-                    document.getElementById("div-link").innerText = "Nenhuma playlist encontrada.";
+                    document.getElementById("div-link").innerText = "Nenhuma midia encontrada.";
                 }
 
                 // Limpar o campo de entrada após a submissão
